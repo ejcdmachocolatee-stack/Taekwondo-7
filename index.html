@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aniversariantes - Academia Leão de Judá</title>
+  <style>
+    body {
+      background-color: #121212;
+      color: #f1c40f;
+      font-family: Arial, sans-serif;
+      padding: 15px;
+      max-width: 500px;
+      margin: 0 auto;
+    }
+    input, button {
+      background-color: #1e1e1e;
+      color: #f1c40f;
+      border: none;
+      padding: 10px;
+      margin: 5px 0;
+      border-radius: 5px;
+      width: 100%;
+      box-sizing: border-box;
+      font-size: 16px;
+    }
+    button {
+      background-color: #f1c40f;
+      color: black;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .alerta {
+      background-color: #1c1c1c;
+      border-left: 5px solid #f1c40f;
+      padding: 10px;
+      margin-top: 10px;
+      border-radius: 5px;
+    }
+    .lista {
+      margin-top: 20px;
+    }
+    ul {
+      list-style: none;
+      padding: 0;
+    }
+    li {
+      background-color: #1c1c1c;
+      color: #f1c40f;
+      margin: 10px 0;
+      padding: 10px;
+      border-radius: 5px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .remove-btn {
+      background-color: red;
+      color: white;
+      border: none;
+      padding: 5px 10px;
+      border-radius: 3px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h1>🎂 Aniversariantes - Academia Leão de Judá 🦁</h1>
+
+  <label>Nome do Aluno:</label>
+  <input type="text" id="nome" placeholder="Ex: Davi Souza">
+
+  <label>Data de Nascimento (dd/mm/aaaa):</label>
+  <input type="text" id="data" maxlength="10" placeholder="Ex: 20/07/2006" oninput="formatarData(this)">
+
+  <button onclick="adicionarPessoa()">✅ Adicionar Aluno</button>
+  <button onclick="verificarAniversariantesDoMes()">🔄 Ver Aniversariantes do Mês</button>
+
+  <div class="alerta" id="alertaMes"></div>
+
+  <div class="lista">
+    <h3>📋 Lista de Alunos Cadastrados:</h3>
+    <ul id="lista"></ul>
+  </div>
+
+  <script>
+    let pessoas = JSON.parse(localStorage.getItem('aniversariantes')) || [];
+
+    function formatarData(campo) {
+      let valor = campo.value.replace(/[^0-9]/g, '');
+      if (valor.length >= 2 && valor.length <= 4) valor = valor.slice(0,2) + '/' + valor.slice(2);
+      if (valor.length > 4) valor = valor.slice(0,2) + '/' + valor.slice(2,4) + '/' + valor.slice(4,8);
+      campo.value = valor;
+    }
+
+    function adicionarPessoa() {
+      const nome = document.getElementById('nome').value.trim();
+      const data = document.getElementById('data').value.trim();
+
+      if (!nome || !data) return alert('Preencha todos os campos corretamente');
+
+      pessoas.push({ nome, data });
+      pessoas.sort((a, b) => a.nome.localeCompare(b.nome));
+      localStorage.setItem('aniversariantes', JSON.stringify(pessoas));
+      atualizarLista();
+      document.getElementById('nome').value = '';
+      document.getElementById('data').value = '';
+    }
+
+    function removerPessoa(index) {
+      if (confirm('Tem certeza que deseja remover este aluno?')) {
+        pessoas.splice(index, 1);
+        localStorage.setItem('aniversariantes', JSON.stringify(pessoas));
+        atualizarLista();
+        verificarAniversariantesDoMes();
+      }
+    }
+
+    function atualizarLista() {
+      const ul = document.getElementById('lista');
+      ul.innerHTML = '';
+      pessoas.forEach((p, index) => {
+        const li = document.createElement('li');
+        li.innerHTML = `
+          <span>${p.nome} - ${p.data}</span>
+          <button class="remove-btn" onclick="removerPessoa(${index})">Remover</button>
+        `;
+        ul.appendChild(li);
+      });
+    }
+
+    function verificarAniversariantesDoMes() {
+      const hoje = new Date();
+      const mesAtual = hoje.getMonth() + 1;
+      let alerta = '';
+
+      pessoas.forEach(p => {
+        const [dia, mes, ano] = p.data.split('/').map(n => parseInt(n));
+        if (mes === mesAtual) {
+          const dataNasc = new Date(ano, mes - 1, dia);
+          const idade = hoje.getFullYear() - dataNasc.getFullYear();
+
+          // Corrigindo cálculo: se já passou o aniversário neste mês, manter a idade
+          if (hoje < new Date(hoje.getFullYear(), mes - 1, dia)) {
+            alerta += `⚠️ ${p.nome} vai fazer ${idade} anos em ${dia}/${mes} 🎉<br><br>`;
+          } else {
+            alerta += `✅ ${p.nome} completou ${idade} anos em ${dia}/${mes} 🎉<br><br>`;
+          }
+        }
+      });
+
+      document.getElementById('alertaMes').innerHTML = alerta || 'Nenhum aniversariante este mês.';
+    }
+
+    atualizarLista();
+    verificarAniversariantesDoMes();
+  </script>
+</body>
+</html>
